@@ -1,7 +1,7 @@
 {
   "domain": "mazda6e_cloud",
   "name": "Mazda 6e Cloud",
-  "codeowners": ["@danperks"],
+  "codeowners": ["@adelinchristian"],
   "config_flow": true,
   "documentation": "https://github.com/adelinchristian/ha-deepal",
   "issue_tracker": "https://github.com/adelinchristian/ha-deepal/issues",

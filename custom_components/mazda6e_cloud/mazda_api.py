@@ -113,7 +113,12 @@ class Mazda6eClient:
     async def send_device_login(self, *, email: str) -> None:
         await self._post(
             "/cma-app-user/api/send-email/device-login/send",
-            {"email": email, "deviceName": DEVICE_NAME, "loginTime": self._now(), "type": "1"},
+            {
+                "email": self.encrypt_request_value(email),
+                "deviceName": DEVICE_NAME,
+                "loginTime": self._now(),
+                "type": "1",
+            },
         )
 
     async def verify_device_code(self, *, email: str, code: str) -> None:
@@ -121,7 +126,7 @@ class Mazda6eClient:
             "/cma-app-user/api/login-device/email-verify",
             {
                 "authCode": code,
-                "email": email,
+                "email": self.encrypt_request_value(email),
                 "deviceName": DEVICE_NAME,
                 "lastLoginTime": self._now(),
                 "type": "3",
