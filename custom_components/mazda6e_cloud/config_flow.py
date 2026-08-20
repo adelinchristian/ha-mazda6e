@@ -92,18 +92,23 @@ class DeepalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     email=user_input[CONF_EMAIL],
                     password=user_input[CONF_PASSWORD],
                 )
-                await client.send_device_login(email=user_input[CONF_EMAIL])
             except MazdaApiError as err:
-                _LOGGER.warning("Mazda login or device-code request failed: %s", err)
+                _LOGGER.warning("Mazda login failed: %s", err)
                 errors["base"] = "login_failed"
             else:
-                self._mazda_login = {
-                    CONF_EMAIL: user_input[CONF_EMAIL],
-                    CONF_DEVICE_ID: device_id,
-                    CONF_ACCESS_TOKEN: tokens.access_token,
-                    CONF_REFRESH_TOKEN: tokens.refresh_token,
-                }
-                return await self.async_step_verify()
+                try:
+                    await client.send_device_login(email=user_input[CONF_EMAIL])
+                except MazdaApiError as err:
+                    _LOGGER.warning("Mazda device-login email request failed: %s", err)
+                    errors["base"] = "device_login_failed"
+                else:
+                    self._mazda_login = {
+                        CONF_EMAIL: user_input[CONF_EMAIL],
+                        CONF_DEVICE_ID: device_id,
+                        CONF_ACCESS_TOKEN: tokens.access_token,
+                        CONF_REFRESH_TOKEN: tokens.refresh_token,
+                    }
+                    return await self.async_step_verify()
 
         return self.async_show_form(
             step_id="user",

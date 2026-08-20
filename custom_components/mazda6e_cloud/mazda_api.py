@@ -80,7 +80,7 @@ class Mazda6eClient:
             async with self._session.post(f"{BASE_URL}{path}", headers=self._headers(), json=body) as response:
                 payload = await response.json(content_type=None)
         except (ClientError, ValueError) as err:
-            raise MazdaApiError(f"Mazda cloud request failed: {err}") from err
+            raise MazdaApiError(f"Mazda request failed for {path}: {err}") from err
 
         if payload.get("success") is True:
             return payload
@@ -89,8 +89,9 @@ class Mazda6eClient:
                 raise MazdaAuthError("Mazda access token expired after refresh")
             await self.refresh_tokens()
             return await self._post(path, body, retry=False)
-        message = payload.get("message") or payload.get("msg") or payload.get("code") or "unknown error"
-        raise MazdaApiError(f"Mazda cloud request failed: {message}")
+        code = payload.get("code") or "unknown"
+        message = payload.get("message") or payload.get("msg") or "unknown error"
+        raise MazdaApiError(f"Mazda request failed for {path}: {code} {message}")
 
     async def login_email_password(self, *, email: str, password: str) -> MazdaTokens:
         """Log in with plain credentials encrypted as expected by the Mazda app."""

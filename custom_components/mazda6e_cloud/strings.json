@@ -59,6 +59,7 @@
     "error": {
       "send_code_failed": "Could not request an SMS code. Check the phone number and country/region.",
       "verification_failed": "The Mazda verification code was rejected or expired.",
+      "device_login_failed": "Mazda accepted the account login but could not send the device verification email.",
       "send_email_code_failed": "Could not request an email code. Check the email address and country/region.",
       "account_not_registered": "Deepal says this account is not registered for the selected country/region. Choose the region used by the official app account, or try the other login method.",
       "login_failed": "Login failed. Check the verification code and account details.",
