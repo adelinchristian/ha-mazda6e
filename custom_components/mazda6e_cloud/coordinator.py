@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import DeepalApiError, DeepalAuthError, DeepalClient
+from .mazda_api import Mazda6eClient, MazdaApiError, MazdaAuthError
 from .const import (
     CONF_ACCESS_TOKEN,
     CONF_ACTIVE_REFRESH_INTERVAL,
@@ -30,7 +30,7 @@ _LOGGER = logging.getLogger(__name__)
 class DeepalDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Fetch vehicle list and condition data."""
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, client: DeepalClient, vehicle_id: str) -> None:
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, client: Mazda6eClient, vehicle_id: str) -> None:
         super().__init__(
             hass,
             _LOGGER,
@@ -48,7 +48,7 @@ class DeepalDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_update_data(self) -> dict[str, Any]:
         try:
             vehicles, condition = await self._async_fetch()
-        except DeepalAuthError as err:
+        except MazdaAuthError as err:
             try:
                 tokens = await self.client.refresh_tokens()
                 new_data = dict(self.entry.data)
@@ -57,10 +57,10 @@ class DeepalDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     new_data[CONF_REFRESH_TOKEN] = tokens.refresh_token
                 self.hass.config_entries.async_update_entry(self.entry, data=new_data)
                 vehicles, condition = await self._async_fetch()
-            except (DeepalApiError, DeepalAuthError) as refresh_err:
+            except (MazdaApiError, MazdaAuthError) as refresh_err:
                 self._record_refresh_failure(refresh_err)
                 raise ConfigEntryAuthFailed(f"Authentication failed: {refresh_err}") from refresh_err
-        except DeepalApiError as err:
+        except MazdaApiError as err:
             self._record_refresh_failure(err)
             raise UpdateFailed(str(err)) from err
 
@@ -72,11 +72,7 @@ class DeepalDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Fetch vehicle metadata and condition."""
         vehicles = await self.client.vehicles()
         vehicle = self._vehicle_from_list(vehicles) or {}
-        if self._vehicle_uses_mqtt(vehicle):
-            condition = await self.client.s05_mqtt_condition(self.vehicle_id)
-        else:
-            await self._async_maybe_active_condition_refresh()
-            condition = await self.client.condition(self.vehicle_id)
+        condition = await self.client.condition(self.vehicle_id)
         return vehicles, condition
 
     def _vehicle_from_list(self, vehicles: list[dict[str, Any]]) -> dict[str, Any] | None:
@@ -112,7 +108,7 @@ class DeepalDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 raise_if_busy=False,
                 timeout=30,
             )
-        except (DeepalApiError, DeepalAuthError, HomeAssistantError) as err:
+        except (MazdaApiError, MazdaAuthError, HomeAssistantError) as err:
             _LOGGER.warning("Deepal active condition refresh failed: %s", err)
 
     async def async_execute_command(

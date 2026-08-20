@@ -29,9 +29,9 @@ class DeepalEntity(CoordinatorEntity[DeepalDataUpdateCoordinator]):
         vehicle = self.coordinator.data.get("vehicle", {}) if self.coordinator.data else {}
         return DeviceInfo(
             identifiers={(DOMAIN, self.coordinator.vehicle_id)},
-            manufacturer="Changan Deepal",
+            manufacturer="Mazda",
             model=vehicle.get("modelName") or vehicle.get("modelCode"),
-            name=vehicle.get("carName") or vehicle.get("vin") or f"Deepal {self.coordinator.vehicle_id}",
+            name=vehicle.get("carName") or vehicle.get("vin") or f"Mazda 6e {self.coordinator.vehicle_id}",
         )
 
     @property

@@ -1,0 +1,11 @@
+{
+  "domain": "mazda6e_cloud",
+  "name": "Mazda 6e Cloud",
+  "codeowners": ["@danperks"],
+  "config_flow": true,
+  "documentation": "https://github.com/adelinchristian/ha-deepal",
+  "issue_tracker": "https://github.com/adelinchristian/ha-deepal/issues",
+  "iot_class": "cloud_polling",
+  "requirements": [],
+  "version": "0.3.0"
+}

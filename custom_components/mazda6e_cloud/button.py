@@ -17,7 +17,7 @@ from .entity import DeepalEntity
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     coordinator: DeepalDataUpdateCoordinator = entry.runtime_data
     entities: list[ButtonEntity] = [DeepalRefreshButton(coordinator)]
-    if not coordinator.vehicle_uses_mqtt:
+    if coordinator.client.commands_enabled and not coordinator.vehicle_uses_mqtt:
         entities.extend([DeepalFlashLightsButton(coordinator), DeepalHonkHornButton(coordinator)])
     async_add_entities(entities)
 

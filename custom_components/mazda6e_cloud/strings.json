@@ -2,10 +2,19 @@
   "config": {
     "step": {
       "user": {
-        "title": "Login method",
-        "description": "Choose the same login method you use in the official Deepal app. Email-code login is recommended where phone/SMS login does not find the account.",
+        "title": "Mazda account login",
+        "description": "Enter the email address and password used by the Mazda 6e app. They are encrypted before being sent to Mazda. A verification code will be sent to your email address.",
         "data": {
-          "login_method": "Login method"
+          "email": "Email address",
+          "password": "Password",
+          "device_id": "Device ID"
+        }
+      },
+      "verify": {
+        "title": "Verify Mazda device",
+        "description": "Enter the verification code sent by Mazda to authorize this Home Assistant device.",
+        "data": {
+          "verification_code": "Verification code"
         }
       },
       "email": {
@@ -49,6 +58,7 @@
     },
     "error": {
       "send_code_failed": "Could not request an SMS code. Check the phone number and country/region.",
+      "verification_failed": "The Mazda verification code was rejected or expired.",
       "send_email_code_failed": "Could not request an email code. Check the email address and country/region.",
       "account_not_registered": "Deepal says this account is not registered for the selected country/region. Choose the region used by the official app account, or try the other login method.",
       "login_failed": "Login failed. Check the verification code and account details.",

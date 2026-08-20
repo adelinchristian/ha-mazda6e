@@ -4,17 +4,11 @@ from __future__ import annotations
 
 from homeassistant.const import Platform
 
-DOMAIN = "deepal"
+DOMAIN = "mazda6e_cloud"
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,
     Platform.BINARY_SENSOR,
-    Platform.LOCK,
-    Platform.COVER,
     Platform.BUTTON,
-    Platform.CLIMATE,
-    Platform.NUMBER,
-    Platform.SWITCH,
-    Platform.TIME,
 ]
 
 CONF_ACCESS_TOKEN = "access_token"

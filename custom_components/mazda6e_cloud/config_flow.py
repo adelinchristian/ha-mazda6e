@@ -4,17 +4,19 @@ from __future__ import annotations
 
 import secrets
 import logging
+import uuid
 from typing import Any
 
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.const import CONF_SCAN_INTERVAL
+from homeassistant.const import CONF_PASSWORD, CONF_SCAN_INTERVAL
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import DeepalApiError, DeepalClient, DeepalRateLimitError
+from .mazda_api import Mazda6eClient, MazdaApiError
 from .const import (
     CONF_ACCESS_TOKEN,
     CONF_ACTIVE_REFRESH_INTERVAL,
@@ -75,24 +77,95 @@ class DeepalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     _reauth_entry: config_entries.ConfigEntry | None = None
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
-        """Choose the app-compatible login flow."""
+        """Authenticate with plain Mazda account credentials."""
+        errors: dict[str, str] = {}
         if user_input is not None:
-            if user_input[CONF_LOGIN_METHOD] == LOGIN_METHOD_EMAIL:
-                return await self.async_step_email()
-            return await self.async_step_phone()
+            device_id = user_input.get(CONF_DEVICE_ID) or str(uuid.uuid4())
+            client = Mazda6eClient(
+                async_get_clientsession(self.hass),
+                access_token="",
+                refresh_token="",
+                device_id=device_id,
+            )
+            try:
+                tokens = await client.login_email_password(
+                    email=user_input[CONF_EMAIL],
+                    password=user_input[CONF_PASSWORD],
+                )
+                await client.send_device_login(email=user_input[CONF_EMAIL])
+            except MazdaApiError as err:
+                _LOGGER.warning("Mazda login or device-code request failed: %s", err)
+                errors["base"] = "login_failed"
+            else:
+                self._mazda_login = {
+                    CONF_EMAIL: user_input[CONF_EMAIL],
+                    CONF_DEVICE_ID: device_id,
+                    CONF_ACCESS_TOKEN: tokens.access_token,
+                    CONF_REFRESH_TOKEN: tokens.refresh_token,
+                }
+                return await self.async_step_verify()
 
-        schema = vol.Schema(
-            {
-                vol.Required(CONF_LOGIN_METHOD, default=LOGIN_METHOD_EMAIL): vol.In(LOGIN_METHOD_OPTIONS),
-            }
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_EMAIL): str,
+                    vol.Required(CONF_PASSWORD): str,
+                    vol.Optional(CONF_DEVICE_ID, default=str(uuid.uuid4())): str,
+                }
+            ),
+            errors=errors,
         )
-        return self.async_show_form(step_id="user", data_schema=schema)
 
     async def async_step_reauth(self, entry_data: dict[str, Any]):
         """Repair an existing entry whose app session has been invalidated."""
         entry_id = self.context.get("entry_id")
         self._reauth_entry = self.hass.config_entries.async_get_entry(entry_id) if entry_id else None
         return await self.async_step_user()
+
+    async def async_step_verify(self, user_input: dict[str, Any] | None = None):
+        """Verify the Mazda device-login code and persist a vehicle entry."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            login = self._mazda_login
+            client = Mazda6eClient(
+                async_get_clientsession(self.hass),
+                access_token=login[CONF_ACCESS_TOKEN],
+                refresh_token=login[CONF_REFRESH_TOKEN],
+                device_id=login[CONF_DEVICE_ID],
+            )
+            try:
+                await client.verify_device_code(email=login[CONF_EMAIL], code=user_input["verification_code"])
+                vehicles = await client.vehicles()
+            except MazdaApiError as err:
+                _LOGGER.warning("Mazda device verification failed: %s", err)
+                errors["base"] = "verification_failed"
+            else:
+                if not vehicles:
+                    errors["base"] = "no_vehicles"
+                else:
+                    vehicle = vehicles[0]
+                    vehicle_id = str(vehicle["carId"])
+                    data = {
+                        CONF_VEHICLE_ID: vehicle_id,
+                        CONF_ACCESS_TOKEN: login[CONF_ACCESS_TOKEN],
+                        CONF_REFRESH_TOKEN: login[CONF_REFRESH_TOKEN],
+                        CONF_DEVICE_ID: login[CONF_DEVICE_ID],
+                    }
+                    if self._reauth_entry is not None:
+                        return self.async_update_reload_and_abort(
+                            self._reauth_entry, data_updates=data, reason="reauth_successful"
+                        )
+                    await self.async_set_unique_id(vehicle_id)
+                    self._abort_if_unique_id_configured()
+                    title = vehicle.get("carName") or vehicle.get("modelName") or vehicle.get("vin") or "Mazda 6e"
+                    return self.async_create_entry(title=title, data=data)
+
+        return self.async_show_form(
+            step_id="verify",
+            data_schema=vol.Schema({vol.Required("verification_code"): str}),
+            errors=errors,
+        )
 
     async def async_step_phone(self, user_input: dict[str, Any] | None = None):
         """Start the app-compatible phone/SMS login flow."""
