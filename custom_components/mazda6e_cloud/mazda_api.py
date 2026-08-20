@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-import base64
 import logging
 import time
 from dataclasses import dataclass
 from typing import Any
 
 from aiohttp import ClientError, ClientSession
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import padding
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -68,13 +65,6 @@ class Mazda6eClient:
             headers["authorization"] = self.access_token
         return headers
 
-    @staticmethod
-    def encrypt_request_value(value: str) -> str:
-        """Encrypt a Mazda login value with the app's embedded RSA key."""
-        public_key = serialization.load_der_public_key(base64.b64decode(PUB_KEY))
-        ciphertext = public_key.encrypt(value.encode(), padding.PKCS1v15())
-        return base64.b64encode(ciphertext).decode()
-
     async def _post(self, path: str, body: dict[str, Any], *, retry: bool = True) -> dict[str, Any]:
         try:
             async with self._session.post(f"{BASE_URL}{path}", headers=self._headers(), json=body) as response:
@@ -94,11 +84,11 @@ class Mazda6eClient:
         raise MazdaApiError(f"Mazda request failed for {path}: {code} {message}")
 
     async def login_email_password(self, *, email: str, password: str) -> MazdaTokens:
-        """Log in with plain credentials encrypted as expected by the Mazda app."""
+        """Log in with email and password values encrypted by the Mazda app."""
         body = {
             "loginTime": self._now(),
-            "email": self.encrypt_request_value(email),
-            "password": self.encrypt_request_value(password),
+            "email": email,
+            "password": password,
             "pubKey": PUB_KEY,
         }
         response = await self._post("/cma-app-auth/api/login/email-pass-in/v2", body, retry=False)
@@ -115,7 +105,7 @@ class Mazda6eClient:
         await self._post(
             "/cma-app-user/api/send-email/device-login/send",
             {
-                "email": self.encrypt_request_value(email),
+                "email": email,
                 "deviceName": DEVICE_NAME,
                 "loginTime": self._now(),
                 "type": "1",
@@ -127,7 +117,7 @@ class Mazda6eClient:
             "/cma-app-user/api/login-device/email-verify",
             {
                 "authCode": code,
-                "email": self.encrypt_request_value(email),
+                "email": email,
                 "deviceName": DEVICE_NAME,
                 "lastLoginTime": self._now(),
                 "type": "3",

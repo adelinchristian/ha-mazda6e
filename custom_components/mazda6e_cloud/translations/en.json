@@ -3,10 +3,10 @@
     "step": {
       "user": {
         "title": "Mazda account login",
-        "description": "Enter the email address and password used by the Mazda 6e app. They are encrypted before being sent to Mazda. A verification code will be sent to your email address.",
+        "description": "Important: use a separate Mazda account, not the account you normally use in the official app. Enter the encrypted email and password values produced by the Mazda 6e app. Plain-text account credentials are not accepted. A verification code will be sent to your email address.",
         "data": {
-          "email": "Email address",
-          "password": "Password",
+          "email": "Encrypted email",
+          "password": "Encrypted password",
           "device_id": "Device ID"
         }
       },

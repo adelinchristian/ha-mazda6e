@@ -77,7 +77,7 @@ class DeepalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     _reauth_entry: config_entries.ConfigEntry | None = None
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
-        """Authenticate with plain Mazda account credentials."""
+        """Authenticate with credentials encrypted by the official Mazda app."""
         errors: dict[str, str] = {}
         if user_input is not None:
             device_id = user_input.get(CONF_DEVICE_ID) or str(uuid.uuid4())

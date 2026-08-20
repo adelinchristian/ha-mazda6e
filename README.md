@@ -16,6 +16,7 @@ This adaptation uses the Mazda 6e `cma-app-gw` endpoints for device-authorized c
 - This is an unofficial integration and is not endorsed by Changan or Deepal.
 - Remote commands can affect the vehicle. Make sure it is safe before using controls such as locks, windows, boot, climate, lights, or horn.
 - This integration cannot be used to drive the car. It does not implement the BLE/digital key path required for drive authorization.
+- Use a separate Mazda account for this integration. Do not use the account you normally use in the official Mazda app.
 - Authorizing a Home Assistant device can affect sessions in the official Mazda app. Use a distinct device ID if you run more than one client.
 
 ## Supported Vehicle
@@ -54,7 +55,7 @@ Remote climate, charging, locks, windows, boot, lights, and horn controls are in
 
 You can also configure it manually from **Settings -> Devices & services -> Add integration**, then search for **Mazda 6e Cloud**.
 
-During setup, enter the email address and password used by the official Mazda app (!! USE A SEPARATE ACCOUNT !!), then enter the device verification code sent by email. The integration encrypts credentials with Mazda's embedded app public key before sending them and does not store them after setup.
+Use a separate Mazda account for this integration, not the account you normally use in the official Mazda app. During setup, enter the encrypted email and password values produced by the official Mazda app, then enter the device verification code sent by email. Plain-text credentials are rejected by Mazda. The encrypted values are used only during setup and are not stored after setup.
 
 ## Notes
 
